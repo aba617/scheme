@@ -1,0 +1,42 @@
+(convert '(1 (furlong 1)) '((m 1)))
+         (201.168 (m 1))
+
+(convert '(1 (furlong 1)(fortnight -1)) '((mi 1)(hr -1)))
+         (0.0003720238095238096 (mi 1) (hr -1))
+
+(convert '(1 (furlong 1)(fortnight -1)) '((mph 1)))
+         (0.0003720238095238096 (mph 1))
+
+(convert '(1 (fortnight -1)(furlong 1)) '((mph 1)))
+         (0.0003720238095238096 (mph 1))
+
+(convert '(3 (lbm 1)(furlong 2)(min -2)) '((joule 1)(sec 2)))
+         Error: units are not compatible
+
+(convert '(3 (lbm 1)(furlong 2)(min -2)) '((BTU 1)))
+         (0.01449862579696719 (btu 1))
+
+(convert '(3 (lbm 2)(furlong 2)(min -5)(furlong 2)(min 1))
+                  '((BTU -1)(BTU 4)(BTU -1)))
+         (7.007005000016083e-05 (btu -1) (btu 4) (btu -1))
+         or
+         (7.007005000016083e-05 (btu 2))
+
+(convert '(1 (bushel 1)) '((peck 1)))
+         (4.0 (peck 1)
+
+(convert '(1 (watt 1)) '((kg 1)(m 2)(sec -3)))
+         (1.0 (kg 1) (m 2) (sec -3))
+
+(convert '(1 (hp 1)) '((ft 1)(lbf 1)(min -1)))
+         (32999.99998332519 (ft 1) (lbf 1) (min -1))
+
+(convert '(1 (cord 1)) '((ft 3)))
+         (127.9999998666517 (ft 3))
+         
+
+(convert '(27.5 (furlong 1)(fortnight -1)) '((mi 1)(hr -1)))
+         (0.01023065476190476 (mi 1) (hr -1))
+
+(convert '(25 (BTU 2)(dyn -1)(m -2)) '((n 1)))
+         (2782857116548.055 (n 1))

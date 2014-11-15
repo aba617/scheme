@@ -1,0 +1,180 @@
+;;Allen Aronis
+;; read-file produces a list whose elements are the expressions in the file.
+;;Shortest path in scheme
+;;Optimized with memoization
+
+
+
+(begin
+
+(define (read-file)
+  (let ((expr (read)))
+    (if (eof-object? expr)
+        '()
+        (cons expr (read-file)))))
+
+;; Here we go:  read in the file that defines the graph
+
+(define data (with-input-from-file "dist.dat" read-file))
+
+
+;cost table
+;implementation from 
+
+(define (make-table)
+  (let ((local-table (list '*table*)))
+    (define (lookup key-1 key-2)
+      (let ((subtable (assoc key-1 (cdr local-table))))
+        (if subtable
+            (let ((record (assoc key-2 (cdr subtable))))
+              (if record
+                   (cdr record) #f)) #f)))
+    (define (insert! key-1 key-2 value)
+      (let ((subtable (assoc key-1 (cdr local-table))))
+        (if subtable
+            (let ((record (assoc key-2 (cdr subtable))))
+              (if record
+                  (set-cdr! record value)
+                  (set-cdr! subtable
+                            (cons (cons key-2 value)
+                                  (cdr subtable)))))
+            (set-cdr! local-table
+                      (cons (list key-1
+                                  (cons key-2 value))
+                            (cdr local-table)))))
+      'ok)            
+    (define (dispatch m)
+      (cond ((equal? m 'lookup-proc) lookup)
+            ((equal? m 'insert-proc!) insert!)
+            (else (error "Unknown operation--TABLE" m))))
+    dispatch))
+
+
+;Child node lookup table
+;
+
+(define (lookup key table)
+  (let ((record (assoc key (cdr table))))
+    (if record
+        (cdr record)
+        #f)))
+
+(define (assoc key records)
+  (cond ((null? records) #f)
+        ((equal? key (caar records)) (car records))
+        (else (assoc key (cdr records)))))
+
+(define (insert! key value table)
+  (let ((record (assoc key (cdr table))))
+    (if record
+        (set-cdr! record value)
+        (set-cdr! table
+                  (cons (cons key value) (cdr table))))))
+; 'ok )
+
+(define (make-cost-table)
+  (list '*table*))
+
+(define lookup-table (make-table))
+(define get (lookup-table 'lookup-proc))
+(define put (lookup-table 'insert-proc!))
+
+(define storage-table (make-cost-table))
+
+(define infinity 1000000)
+
+; FUNCTION TO LOAD LOOKUP TABLE
+
+(define (load-lookup-table dat)
+  (cond ((null? dat)
+         'lookup-table-loaded!)
+        (else (put (caar dat)
+                   (cadar dat)
+                   (caddar dat))
+              (load-lookup-table (cdr dat)))))
+               
+
+(load-lookup-table data)
+
+;;Function returns list of child nodes
+
+(define (get-children li comp)
+  (cond ((null? li)
+         li)
+        ((equal? comp (caar li))
+         (cons (cadar li) (get-children (cdr li) comp)))
+        (else 
+         (get-children (cdr li) comp))))
+
+;;Basic compare function evaluates to lesser value
+
+(define (compare l1 l2)
+  (if (< l1 l2)
+      l1
+      l2))
+;;
+;;====================
+;;MAIN CODE
+;;==================
+;;
+
+;; 
+;;Taken from psuedocode
+;;
+;; if child is "end"
+;;  just compute (lookup node child)
+;; else
+;;  compute (lookup node child) + cost (child)
+;;
+
+
+(define (compute node child-node)
+    (if (equal? 'end child-node)
+          (get node 'end)
+          (+ (get node child-node)
+             (cost child-node))))
+
+;;
+;;Taken from pseudocode
+;;
+;;if node has no children,
+;;    return infinity
+;;for loop{
+;; .....
+;;}
+;;
+;;return the minimum of those computed values
+;;
+
+
+(define (for-loop node child-list)
+    (if (null? child-list)
+           infinity
+           (compare (compute node (car child-list))
+                    (for-loop node (cdr child-list)))))
+
+;;
+;;
+;;creates the child-node-list from the node
+;;return infinity if the child-list is empty
+;;loops from the node and child list
+;;
+;;MEMOIZATION additions check if the node is already memoized 
+;; then it just evaluates to the pre-computed value
+;;otherwise, compute the result
+;; store it
+;; evaluate to it
+;;
+
+(define (cost node)
+  (define child-list (get-children data node))
+  (cond  ((lookup node storage-table)
+          (lookup node storage-table))
+         ((null? child-list)
+          infinity)
+         (else  
+          (let ((results (for-loop node child-list)))
+            (insert! node results storage-table) results))))
+
+(cost 'start))
+
